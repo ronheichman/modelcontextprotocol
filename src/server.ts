@@ -111,6 +111,7 @@ async function makeApiRequest(
       "Authorization": `Bearer ${resolvedApiKey}`,
       "User-Agent": `perplexity-mcp/${VERSION}`,
       "X-Source": "pplx-mcp-server",
+      "X-Pplx-Integration": `perplexity-mcp/${VERSION}`,
     };
     if (serviceOrigin) {
       headers["X-Service"] = serviceOrigin;
