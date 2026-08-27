@@ -18,7 +18,7 @@ export type { ApiKeyProvider, PerplexityServerOptions } from "./types.js";
 
 const PERPLEXITY_API_KEY = process.env.PERPLEXITY_API_KEY;
 const PERPLEXITY_BASE_URL = process.env.PERPLEXITY_BASE_URL || "https://api.perplexity.ai";
-const VERSION = "1.2.0";
+const VERSION = "1.2.1";
 
 // Agent API presets backing each tool: https://docs.perplexity.ai/docs/agent-api/presets
 export const ASK_PRESET = "fast";
@@ -776,5 +776,42 @@ export function createPerplexityServer(serviceOrigin?: string, serverOptions?: P
     }
   );
 
+  advertiseJsonSchema202012(server.server);
+
   return server.server;
+}
+
+// The MCP TypeScript SDK stamps draft-07 on tools/list schemas
+// (modelcontextprotocol/typescript-sdk#2084); 2020-12-only clients reject
+// them. The schemas are valid under both dialects, so only the declared
+// dialect needs rewriting. Remove once typescript-sdk#2085 ships.
+const JSON_SCHEMA_2020_12 = "https://json-schema.org/draft/2020-12/schema";
+
+function advertiseJsonSchema202012(server: McpServer["server"]) {
+  type ListToolsHandler = (request: unknown, extra: unknown) => Promise<{
+    tools: Array<{
+      inputSchema?: { $schema?: string };
+      outputSchema?: { $schema?: string };
+    }>;
+  }>;
+  // _requestHandlers is private SDK state; goes away with this shim.
+  const handlers = (server as unknown as {
+    _requestHandlers: Map<string, ListToolsHandler>;
+  })._requestHandlers;
+  const listTools = handlers.get("tools/list");
+  if (!listTools) {
+    return;
+  }
+  handlers.set("tools/list", async (request, extra) => {
+    const result = await listTools(request, extra);
+    for (const tool of result.tools ?? []) {
+      if (tool.inputSchema?.$schema) {
+        tool.inputSchema.$schema = JSON_SCHEMA_2020_12;
+      }
+      if (tool.outputSchema?.$schema) {
+        tool.outputSchema.$schema = JSON_SCHEMA_2020_12;
+      }
+    }
+    return result;
+  });
 }

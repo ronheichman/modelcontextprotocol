@@ -127,9 +127,9 @@ describe("Perplexity MCP Server", () => {
           headers: {
             "Content-Type": "application/json",
             Authorization: "Bearer test-api-key",
-            "User-Agent": "perplexity-mcp/1.2.0",
+            "User-Agent": "perplexity-mcp/1.2.1",
             "X-Source": "pplx-mcp-server",
-            "X-Pplx-Integration": "perplexity-mcp/1.2.0",
+            "X-Pplx-Integration": "perplexity-mcp/1.2.1",
           },
           body: JSON.stringify({
             preset: "fast",

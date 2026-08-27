@@ -366,3 +366,31 @@ describe("Server Utility Functions", () => {
     });
   });
 });
+
+describe("createPerplexityServer tools/list schemas", () => {
+  it("advertises JSON Schema 2020-12 on every input and output schema", async () => {
+    vi.stubEnv("PERPLEXITY_API_KEY", "pplx-test");
+    const { Client } = await import("@modelcontextprotocol/sdk/client/index.js");
+    const { InMemoryTransport } = await import("@modelcontextprotocol/sdk/inMemory.js");
+    const { createPerplexityServer } = await import("./server.js");
+
+    const server = createPerplexityServer();
+    const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
+    await server.connect(serverTransport);
+    const client = new Client({ name: "test", version: "0.0.0" });
+    await client.connect(clientTransport);
+
+    const { tools } = await client.listTools();
+    expect(tools.length).toBeGreaterThan(0);
+    for (const tool of tools) {
+      expect(tool.inputSchema.$schema, `${tool.name} inputSchema`).toBe(
+        "https://json-schema.org/draft/2020-12/schema"
+      );
+      expect(tool.outputSchema?.$schema, `${tool.name} outputSchema`).toBe(
+        "https://json-schema.org/draft/2020-12/schema"
+      );
+    }
+    await client.close();
+    await server.close();
+  });
+});
