@@ -781,12 +781,10 @@ export function createPerplexityServer(serviceOrigin?: string, serverOptions?: P
   return server.server;
 }
 
-// The MCP TypeScript SDK stamps draft-07 on zod-derived schemas in tools/list
-// (modelcontextprotocol/typescript-sdk#2084), and 2020-12-only clients reject
-// every tool before invocation. Our schemas are valid under both dialects, so
-// only the declared dialect needs rewriting; this mirrors what the upstream
-// fix (typescript-sdk#2085) does for zod v3 schemas. Remove once that fix is
-// released and the SDK dependency is bumped past it.
+// The MCP TypeScript SDK stamps draft-07 on tools/list schemas
+// (modelcontextprotocol/typescript-sdk#2084); 2020-12-only clients reject
+// them. The schemas are valid under both dialects, so only the declared
+// dialect needs rewriting. Remove once typescript-sdk#2085 ships.
 const JSON_SCHEMA_2020_12 = "https://json-schema.org/draft/2020-12/schema";
 
 function advertiseJsonSchema202012(server: McpServer["server"]) {
@@ -796,8 +794,7 @@ function advertiseJsonSchema202012(server: McpServer["server"]) {
       outputSchema?: { $schema?: string };
     }>;
   }>;
-  // _requestHandlers is private; acceptable here because this shim is
-  // temporary and pinned to the SDK versions we test against.
+  // _requestHandlers is private SDK state; goes away with this shim.
   const handlers = (server as unknown as {
     _requestHandlers: Map<string, ListToolsHandler>;
   })._requestHandlers;
